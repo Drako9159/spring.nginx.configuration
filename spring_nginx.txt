@@ -1,0 +1,68 @@
+sudo apt install nginx
+sudo nano etc/nginx/sites-available/app
+
+server {
+    listen 80;
+    server_name 184.72.90.109;
+
+    location / {
+        proxy_pass http://127.0.0.1:8000; 
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+// crear enlace
+
+sudo ln -s /etc/nginx/sites-available/app /etc/nginx/sites-enabled/
+
+
+// activacion en el arranque
+
+sudo nano /etc/systemd/system/app.service
+
+[Unit]
+Description=App
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/java -jar /home/ubuntu/app/app.jar --spring.profiles.active=prod # Poner el directorio de vuestra app
+WorkingDirectory=/home/ubuntu/app # Poner el directorio de vuestra app
+User=ubuntu
+Restart=no
+
+[Install]
+WantedBy=multi-user.target
+
+
+// nginx utils
+sudo systemctl status nginx.service
+sudo systemctl stop nginx
+
+
+sudo systemctl enable app.service
+sudo systemctl start app.service
+sudo systemctl restart nginx
+sudo systemctl daemon-reload
+sudo systemctl restart app.service
+
+// check logs
+sudo journalctl -u app -f
+sudo journalctl -u app -xe
+
+// off aplication
+sudo lsof -i :8000
+sudo kill PID
+
+// restart app
+sudo systemctl restart app.service
+
+
+
+Iniciar el servicio: sudo systemctl start app
+Detener el servicio: sudo systemctl stop app
+Reiniciar el servicio: sudo systemctl restart app
+Habilitar el inicio automático: sudo systemctl enable app
+Deshabilitar el inicio automático: sudo systemctl disable app
